@@ -19,7 +19,7 @@ for this or similar tools, but be aware that you are in breach of their rules an
 ## Downloading and Running
 
 Download and install the current version of AutoHotKey from [their website](https://www.autohotkey.com/).
-Then, either clone the repo, direct download as raw, or <a id="raw-url" href="https://raw.githubusercontent.com/github-username/project/master/filename">click here to download flasker.ahk</a>.
+Then, either clone the repo, direct download as raw, or <a id="raw-url" href="https://raw.githubusercontent.com/snt0/poe-flasker/master/flasker.ahk">click here to download flasker.ahk</a>.
 Then simply run `flasker.ahk`. No window will pop up until you're in Path of Exile and press the configuration key.
 
 I will not distribute pre-built executables. You are using an external tool to break the rules of a video game, you ought not trust random `.exe`s enough to download them off GitHub.
