@@ -1,4 +1,4 @@
-#IfWinActive Path of Exile
+#IfWinActive ahk_class POEWindowClass
 #Persistent
 #NoEnv
 #SingleInstance force
@@ -58,7 +58,7 @@ If !FileExist(config) {
 } Else If FileExist(config) {
 	IniRead, toggle_key, %config%, hotkeys, toggle_key, %toggle_key%
 	IniRead, attack_key, %config%, hotkeys, attack_key, %attack_key%
-	IniRead open_gui_key, %config%, user_config, open_gui_key, %open_gui_key%
+	IniRead, open_gui_key, %config%, user_config, open_gui_key, %open_gui_key%
 	IniRead, require_combat, %config%, combat, enabled, %require_combat%
 	IniRead, combat_flask_timer, %config%, combat, timer, %combat_flask_timer%
 	IniRead, flask_origin_x, %config%, flask_origin, flask_origin_x, %flask_origin_x%
@@ -79,10 +79,14 @@ If !FileExist(config) {
 	}
 }
 
+#IfWinActive ahk_class POEWindowClass
 Hotkey %toggle_key%, toggle_flasking
 Hotkey ~%attack_key%, attack
 Hotkey %open_gui_key%, open_gui
 Return
+#IfWinActive
+
+
 
 ; toggle flasking behaviour
 toggle_flasking:
@@ -100,17 +104,15 @@ toggle_flasking:
 Return
 
 attack:
-    If (!flasking) {
-        Return
-    } Else {
-        SetTimer, flask_timer, % 1
-        ; Reset the attack_delay timer every time attack is called.
-        SetTimer, attack_delay, %combat_flask_timer%
-        Return
-    }
+	If (flasking and require_combat){
+		SetTimer, flask_timer, % 1
+		; Reset the attack_delay timer every time attack is called.
+		SetTimer, attack_delay, %combat_flask_timer%
+		}
+	Return
 
 attack_delay:
-    ; This subroutine is called if attack hasn't been called for 1 second.
+    ; This subroutine is called if attack hasn't been called for the attack timer.
     SetTimer, flask_timer, % "Off"
     ; Turn off the attack_delay timer as we don't want it to keep firing.
     SetTimer, attack_delay, % "Off"
@@ -118,9 +120,11 @@ Return
 
 ; autoflasking subroutine
 flask_timer:
-	If !flasking
+	If (!flasking or !WinActive("ahk_class POEWindowClass"))
 		Return
 	For flask_pos, flask_bind in flask_hotkeys {
+		If (!WinActive("ahk_class POEWindowClass"))
+			Return
 		If flask_enabled[flask_pos] { ; If the flask is set to be used
 			x := flask_origin_x + flask_dur_l * (flask_pos - 1)
 			PixelGetColor, flask_col, %x%, %flask_origin_y%
@@ -133,7 +137,6 @@ flask_timer:
 		}
 	}
 Return
-
 
 ; GUI labels and elements
 open_gui:
@@ -219,7 +222,7 @@ F7::
 		Gui, FlaskSquare%A_Index%:Show, x%x% y%flask_origin_y% w%flask_dur_w% h%flask_dur_h%
 	}
 
-	Sleep 1000 ; Keep squares visible for 2 seconds
+	Sleep 1000 ; Keep squares visible for 1 second
 
 	; Destroy flask origin squares
 	Loop, 5 {
@@ -272,6 +275,7 @@ save_config:
     assign_hotkeys(old_toggle_key, toggle_key, old_attack_key, attack_key, old_gui_key, open_gui_key)
 
 	IniWrite, %toggle_key%, %config%, hotkeys, toggle_key
+	IniWrite, %attack_key%, %config%, hotkeys, attack_key
 	IniWrite, %open_gui_key%, %config%, hotkeys, open_gui_key
 
 	Gui, Autoflask_Config:Destroy
@@ -303,7 +307,3 @@ Return
 remove_tooltip:
 	ToolTip
 Return
-
-; Bind Ctrl F5 to reload the script for debugging
-^F5::
-	Reload
