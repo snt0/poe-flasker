@@ -29,8 +29,8 @@ combat_flask_timer := 1000 ; how long to wait before stopping flasking after att
 flask_origin_x := 316 ; x-origin of flask bar
 flask_origin_y := 1072 ; y-origin of flask bar
 
-delay_lower := 57 ; lower bound of sleep duration
-delay_upper := 114 ; upper bound of sleep duration
+delay_lower := 90 ; lower bound of sleep duration
+delay_upper := 150 ; upper bound of sleep duration
 
 tooltip_duration := 500 ; how long to keep tooltip up
 
@@ -90,6 +90,7 @@ Return
 
 ; toggle flasking behaviour
 toggle_flasking:
+	flask_not_activated_counter := 0
 	ToolTip, % "Autoflask " ((flasking := !flasking) ? "enabled" : "disabled"), 316, 968
 	; If we're disabling autoflasking, turn off the timer 
 	If (!flasking){
@@ -105,7 +106,7 @@ Return
 
 attack:
 	If (flasking and require_combat){
-		SetTimer, flask_timer, % 1
+		SetTimer, flask_timer, % 100
 		; Reset the attack_delay timer every time attack is called.
 		SetTimer, attack_delay, %combat_flask_timer%
 		}
@@ -118,11 +119,18 @@ attack_delay:
     SetTimer, attack_delay, % "Off"
 Return
 
+Global flask_not_activated_counter := 0
+
 ; autoflasking subroutine
 flask_timer:
 	If (!flasking or !WinActive("ahk_class POEWindowClass"))
 		Return
+	backoff_count := Floor(flask_not_activated_counter / 20)
 	For flask_pos, flask_bind in flask_hotkeys {
+		If (backoff_count >= 1 ){
+			backoff_timer := backoff_count * 100
+			Sleep %backoff_timer%
+		}
 		If (!WinActive("ahk_class POEWindowClass"))
 			Return
 		If flask_enabled[flask_pos] { ; If the flask is set to be used
@@ -133,6 +141,14 @@ flask_timer:
 				Send %flask_bind%
 				Random, delay, delay_lower, delay_upper
 				Sleep %delay%
+				PixelGetColor, flask_col, %x%, %flask_origin_y%
+				If (flask_col != flask_dur_col) {
+					; Flask was used but didn't activate, increment back-off counter
+					flask_not_activated_counter += 1
+				}
+				else{
+					flask_not_activated_counter := 0
+				}
 			}
 		}
 	}
